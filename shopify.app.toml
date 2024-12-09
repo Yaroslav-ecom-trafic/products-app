@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "9c83d413bd308533d633b28dd3ea89fb"
-application_url = "https://shed-stick-rug-available.trycloudflare.com"
+application_url = "https://sf-compound-testimonials-copy.trycloudflare.com"
 embedded = true
 name = "My new awesome app"
 handle = "my-new-awesome-app-205"
@@ -19,9 +19,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://shed-stick-rug-available.trycloudflare.com/auth/callback",
-  "https://shed-stick-rug-available.trycloudflare.com/auth/shopify/callback",
-  "https://shed-stick-rug-available.trycloudflare.com/api/auth/callback"
+  "https://sf-compound-testimonials-copy.trycloudflare.com/auth/callback",
+  "https://sf-compound-testimonials-copy.trycloudflare.com/auth/shopify/callback",
+  "https://sf-compound-testimonials-copy.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
