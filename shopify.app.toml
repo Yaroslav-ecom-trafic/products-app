@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "9c83d413bd308533d633b28dd3ea89fb"
-application_url = "https://micro-diagnosis-arts-retrieve.trycloudflare.com"
+application_url = "https://biol-according-invasion-threshold.trycloudflare.com"
 embedded = true
 name = "My new awesome app"
 handle = "my-new-awesome-app-205"
@@ -19,9 +19,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://micro-diagnosis-arts-retrieve.trycloudflare.com/auth/callback",
-  "https://micro-diagnosis-arts-retrieve.trycloudflare.com/auth/shopify/callback",
-  "https://micro-diagnosis-arts-retrieve.trycloudflare.com/api/auth/callback"
+  "https://biol-according-invasion-threshold.trycloudflare.com/auth/callback",
+  "https://biol-according-invasion-threshold.trycloudflare.com/auth/shopify/callback",
+  "https://biol-according-invasion-threshold.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

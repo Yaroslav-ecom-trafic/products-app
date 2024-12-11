@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Page, DataTable, Thumbnail } from '@shopify/polaris';
 import { authenticate } from "../shopify.server";
 import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
-import { getProducts } from '../models/Products.server';
+import { useActionData, useFetcher, useLoaderData } from "@remix-run/react";
+import { getNextPageProducts, getProducts } from '../models/Products.server';
 
 const headings = [
   { title: 'Title' },
@@ -22,8 +22,28 @@ export async function loader({ request }) {
   });
 }
 
+export async function action({ request }) {
+  const admin = await authenticate.admin(request);
+
+  const formData = await request.formData();
+  const cursor = formData.get('cursor');
+
+  const products = await getNextPageProducts(admin.admin.graphql, cursor);
+
+  // console.log('products ====>>>>>', products);
+
+  return json({
+    products
+  });
+}
+
 export default function SalesByProduct() {
+  const fetcher = useFetcher();
   const { products: { products, pageInfo } } = useLoaderData();
+  // const actionData = useActionData();
+
+  // const [currentPage, setCurrentPage] = useState(0);
+  // const [allPages, setAllPages] = useState([products]);
 
   const [sortDirection, setSortDirection] = useState('none');
   const [sortedColumnIndex, setSortedColumnIndex] = useState(null);
@@ -31,16 +51,12 @@ export default function SalesByProduct() {
   const [hasMore, setHasMore] = useState(pageInfo.hasNextPage || false);
   const [endCursor, setEndCursor] = useState(pageInfo.endCursor || null);
 
-  console.log('hasMore ====>>>>>', hasMore);
-  console.log('endCursor ====>>>>>', endCursor);
-
   const handleNextPage = async () => {
-    console.log('handleNextPage ====>>>>>');
-
-    // const nextProducts = await getNextPageProducts(admin.admin.graphql, endCursor);
-    // setSortedRows([...nextProducts]);
-    // setHasMore(nextProducts[0].pageInfo.hasNextPage);
-    // setEndCursor(nextProducts[0].pageInfo.endCursor);
+    //  фетчер тригер для экшена когда нет форм.
+    fetcher.submit(
+      { cursor: endCursor },
+      { method: "POST" }
+    );
   };
 
   const handleSort = (index, direction) => {
@@ -62,6 +78,20 @@ export default function SalesByProduct() {
     setSortedColumnIndex(index);
   };
 
+  useEffect(() => {
+    if (fetcher.data && fetcher.state === 'idle') {
+      console.log('fetcher.data ====>>>>>', fetcher.data);
+
+      setSortedRows([...fetcher.data.products.products]);
+      setHasMore(fetcher.data.products.pageInfo.hasNextPage);
+      setEndCursor(fetcher.data.products.pageInfo.endCursor);
+    }
+  }, [fetcher.data, fetcher.state]);
+
+  const handlePreviousPage = () => {
+    console.log('handlePreviousPage ====>>>>>');
+  };
+
   const rows = sortedRows.map(product => [
     product.name,
     <Thumbnail
@@ -73,8 +103,6 @@ export default function SalesByProduct() {
     product.price,
     product.quantity
   ]);
-
-  console.log('Current sortedRows:', sortedRows);
 
   return (
     <Page title="Sales by product">
@@ -96,6 +124,11 @@ export default function SalesByProduct() {
         pagination={{
           hasNext: hasMore,
           onNext: handleNextPage,
+          hasPrevious: true,
+          onPrevious: handlePreviousPage,
+          // Добавляем disabled состояние для кнопки
+          nextTooltip: fetcher.state !== 'idle' ? 'Loading...' : undefined,
+          disabled: fetcher.state !== 'idle'
         }}
       />
     </Page>
