@@ -2,7 +2,7 @@ export async function getProducts(graphql) {
   const response = await graphql(
     `#graphql
           query {
-            products(first: 5) {
+            products(first: 20) {
               edges {
                 node {
                   id
@@ -62,7 +62,7 @@ export async function getNextPageProducts(graphql, cursor) {
   const response = await graphql(
     `#graphql
       query getProducts($cursor: String!) {
-        products(first: 5, after: $cursor) {
+        products(first: 20, after: $cursor) {
           edges {
             cursor
             node {

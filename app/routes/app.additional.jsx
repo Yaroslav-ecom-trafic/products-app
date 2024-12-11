@@ -28,23 +28,15 @@ export async function action({ request }) {
   const formData = await request.formData();
   const cursor = formData.get('cursor');
 
-
   let products;
 
-  console.log('cursor ====>>>>>', cursor);
-
   if (cursor === 'false') {
-    console.log('cursor === false');
     products = await getProducts(admin.admin.graphql);
   }
-  
+
   if (cursor !== 'false') {
-    console.log('cursor !== false');
-    
     products = await getNextPageProducts(admin.admin.graphql, cursor);
   }
-
-  // console.log('products ====>>>>>', products);
 
   return json({
     products
@@ -97,7 +89,7 @@ export default function SalesByProduct() {
   const handleSort = (index, direction) => {
     const sorted = [...sortedRows].sort((a, b) => {
       const key = headings[index].title.toLowerCase();
-      
+
       switch (key) {
         case 'price':
           return direction === 'ascending' ? parseFloat(a[key].replace('$', '')) - parseFloat(b[key].replace('$', '')) : parseFloat(b[key].replace('$', '')) - parseFloat(a[key].replace('$', ''));
