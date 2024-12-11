@@ -2,7 +2,7 @@ export async function getProducts(graphql) {
   const response = await graphql(
     `#graphql
           query {
-            products(first: 10) {
+            products(first: 5) {
               edges {
                 node {
                   id
@@ -43,7 +43,7 @@ export async function getProducts(graphql) {
 
     const data = ({
       id: node.id,
-      name: node.title,
+      title: node.title,
       image: node.images.edges[0]?.node.url,
       price: `$${parseFloat(node.priceRangeV2.minVariantPrice.amount).toFixed(2)}`,
       quantity: node.variants.edges[0]?.node.inventoryQuantity || '0'
@@ -62,7 +62,7 @@ export async function getNextPageProducts(graphql, cursor) {
   const response = await graphql(
     `#graphql
       query getProducts($cursor: String!) {
-        products(first: 10, after: $cursor) {
+        products(first: 5, after: $cursor) {
           edges {
             cursor
             node {
@@ -110,7 +110,7 @@ export async function getNextPageProducts(graphql, cursor) {
 
     const data = ({
       id: node.id,
-      name: node.title,
+      title: node.title,
       image: node.images.edges[0]?.node.url,
       price: `$${parseFloat(node.priceRangeV2.minVariantPrice.amount).toFixed(2)}`,
       quantity: node.variants.edges[0]?.node.inventoryQuantity || '0'

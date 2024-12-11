@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Page, DataTable, Thumbnail } from '@shopify/polaris';
 import { authenticate } from "../shopify.server";
 import { json } from "@remix-run/node";
-import { useActionData, useFetcher, useLoaderData } from "@remix-run/react";
+import { useFetcher, useLoaderData } from "@remix-run/react";
 import { getNextPageProducts, getProducts } from '../models/Products.server';
 
 const headings = [
@@ -28,7 +28,21 @@ export async function action({ request }) {
   const formData = await request.formData();
   const cursor = formData.get('cursor');
 
-  const products = await getNextPageProducts(admin.admin.graphql, cursor);
+
+  let products;
+
+  console.log('cursor ====>>>>>', cursor);
+
+  if (cursor === 'false') {
+    console.log('cursor === false');
+    products = await getProducts(admin.admin.graphql);
+  }
+  
+  if (cursor !== 'false') {
+    console.log('cursor !== false');
+    
+    products = await getNextPageProducts(admin.admin.graphql, cursor);
+  }
 
   // console.log('products ====>>>>>', products);
 
@@ -40,37 +54,60 @@ export async function action({ request }) {
 export default function SalesByProduct() {
   const fetcher = useFetcher();
   const { products: { products, pageInfo } } = useLoaderData();
-  // const actionData = useActionData();
 
-  // const [currentPage, setCurrentPage] = useState(0);
-  // const [allPages, setAllPages] = useState([products]);
+  const [currentPage, setCurrentPage] = useState(0);
 
   const [sortDirection, setSortDirection] = useState('none');
   const [sortedColumnIndex, setSortedColumnIndex] = useState(null);
   const [sortedRows, setSortedRows] = useState(products);
   const [hasMore, setHasMore] = useState(pageInfo.hasNextPage || false);
   const [endCursor, setEndCursor] = useState(pageInfo.endCursor || null);
+  const [cursorHistory, setCursorHistory] = useState([]);
 
-  const handleNextPage = async () => {
-    //  фетчер тригер для экшена когда нет форм.
-    fetcher.submit(
-      { cursor: endCursor },
-      { method: "POST" }
-    );
+  const handlePreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    };
+
+    if (fetcher.state === 'idle' && cursorHistory.length > 0) {
+      const previousCursor = cursorHistory[cursorHistory.length - 2];
+
+      setCursorHistory(prev => prev.slice(0, -1));
+
+      fetcher.submit(
+        { cursor: previousCursor || false },
+        { method: "POST" }
+      );
+    }
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage(currentPage + 1);
+
+    if (fetcher.state === 'idle') {
+      setCursorHistory(prev => [...prev, endCursor]);
+
+      fetcher.submit(
+        { cursor: endCursor },
+        { method: "POST" }
+      );
+    }
   };
 
   const handleSort = (index, direction) => {
     const sorted = [...sortedRows].sort((a, b) => {
       const key = headings[index].title.toLowerCase();
+      
+      switch (key) {
+        case 'price':
+          return direction === 'ascending' ? parseFloat(a[key].replace('$', '')) - parseFloat(b[key].replace('$', '')) : parseFloat(b[key].replace('$', '')) - parseFloat(a[key].replace('$', ''));
+        case 'quantity':
+          return direction === 'ascending' ? parseInt(a[key], 10) - parseInt(b[key], 10) : parseInt(b[key], 10) - parseInt(a[key], 10);
+        case 'title':
+          return direction === 'ascending' ? a[key].localeCompare(b[key]) : b[key].localeCompare(a[key]);
+      }
 
-      const aValue = key === 'price'
-        ? parseFloat(a[key].replace('$', ''))
-        : parseInt(a[key], 10);
-      const bValue = key === 'price'
-        ? parseFloat(b[key].replace('$', ''))
-        : parseInt(b[key], 10);
-
-      return direction === 'ascending' ? aValue - bValue : bValue - aValue;
+      return sorted;
     });
 
     setSortedRows(sorted);
@@ -78,9 +115,9 @@ export default function SalesByProduct() {
     setSortedColumnIndex(index);
   };
 
+
   useEffect(() => {
     if (fetcher.data && fetcher.state === 'idle') {
-      console.log('fetcher.data ====>>>>>', fetcher.data);
 
       setSortedRows([...fetcher.data.products.products]);
       setHasMore(fetcher.data.products.pageInfo.hasNextPage);
@@ -88,16 +125,12 @@ export default function SalesByProduct() {
     }
   }, [fetcher.data, fetcher.state]);
 
-  const handlePreviousPage = () => {
-    console.log('handlePreviousPage ====>>>>>');
-  };
-
   const rows = sortedRows.map(product => [
-    product.name,
+    product.title,
     <Thumbnail
       source={product.image || "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_medium.png"}
       key={product.id}
-      alt={product.name}
+      alt={product.title}
       size="small"
     />,
     product.price,
@@ -115,7 +148,7 @@ export default function SalesByProduct() {
         ]}
         headings={headings.map((heading) => heading.title)}
         rows={rows}
-        sortable={[false, false, true, true]}
+        sortable={[true, false, true, true]}
         defaultSortDirection="descending"
         onSort={handleSort}
         initialSortColumnIndex={3}
@@ -124,9 +157,8 @@ export default function SalesByProduct() {
         pagination={{
           hasNext: hasMore,
           onNext: handleNextPage,
-          hasPrevious: true,
+          hasPrevious: currentPage <= 0 ? false : true,
           onPrevious: handlePreviousPage,
-          // Добавляем disabled состояние для кнопки
           nextTooltip: fetcher.state !== 'idle' ? 'Loading...' : undefined,
           disabled: fetcher.state !== 'idle'
         }}
